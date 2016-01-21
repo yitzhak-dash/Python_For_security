@@ -60,6 +60,15 @@ def receive_file_contents(file_name, usersock):  # UPLOAD
 
 
 def handle_connection(user_sock, user_info):
+    command_list = [
+        "DRIVERSEARCH",
+        "DIRSEARCH",
+        "DOWNLOAD",
+        "UPLOAD",
+        "CLOSE"
+    ]
+
+    command = recv_data(user_sock).upper()
     
     return
 
