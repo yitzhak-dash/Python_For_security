@@ -20,6 +20,7 @@ CLOSE
 
 This activity will require you to use multithreading, ctypes, regular
 expressions, and some libraries with which you're unfamiliar. ENJOY!
+ha-ha-ha...
 '''
 
 import os, re, socket, threading, struct
