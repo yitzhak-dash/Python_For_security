@@ -1,4 +1,4 @@
-'''
+"""
 The final activity for the Advanced Python section is a drive-wide FTP-like
 tool. You should be able to receive multiple connections, each on their
 own thread. You should take several commands:
@@ -21,7 +21,7 @@ CLOSE
 This activity will require you to use multithreading, ctypes, regular
 expressions, and some libraries with which you're unfamiliar. ENJOY!
 ha-ha-ha...
-'''
+"""
 
 import os, re, socket, threading, struct
 from ctypes import *
