@@ -18,11 +18,13 @@ UPLOAD <filename>
 CLOSE
     CLOSE ends the connection
 
-This activity will require you to use multithreading, ctypes, regular
+This activity will require you to use multithreading, regular
 expressions, and some libraries with which you're unfamiliar. ENJOY!
 '''
 
-import os, re, socket, threading, struct
+import socket
+import struct
+import sys
 from ctypes import *
 
 
@@ -67,31 +69,8 @@ def send_data(sock, data):  # Implement a networking protocol
     return
 
 
-def search_drive(file_name):  # DRIVESEARCH
-    re_obj = re.compile(file_name)
-    for root, dirs, files in os.walk("C:\\"):
-        for i in files:
-            if re.search(re_obj, i):
-                return os.path.join(root, i)
-    return -1
-
-
-def search_directory(file_name):  # DIRSEARCH
-    re_obj = re.compile(file_name)
-    for root, dirs, files in os.walk(os.getcwd()):
-        for i in files:
-            if re.search(re_obj, i):
-                return os.path.join(root, i)
-    return -1
-
-
-def send_file_contents(file_name, usersock, userinfo):  # DOWNLOAD
-    data = read_file(file_name)
-    print data
-    if data == -1:
-        send_data(usersock, "FILE NOT FOUND")
-        return -1
-    send_data(usersock, data)
+def send_file_contents(file_name, usersock):  # DOWNLOAD
+    send_data(usersock, read_file(file_name))
     return
 
 
@@ -101,62 +80,57 @@ def receive_file_contents(file_name, usersock):  # UPLOAD
     return
 
 
-def handle_connection(usersock, userinfo):
+def main():
     command_list = ["DRIVESEARCH",
                     "DIRSEARCH",
                     "DOWNLOAD",
                     "UPLOAD",
                     "CLOSE"]
 
-    continue_bool = True
+    cont = True
 
-    while continue_bool:
-        send_data(usersock, "COMMAND: ")
-        command = recv_data(usersock).upper()
+    if len(sys.argv) < 2:
+        print "Usage: %s [ADDRESS]" % sys.argv[0]
+        exit()
 
-        if command == "DRIVESEARCH":
-            send_data(usersock, "Filename: ")
-            search_results = search_drive(recv_data(usersock))
-            if search_results == -1:
-                send_data(usersock, "FILE NOT FOUND")
-            else:
-                send_data(usersock, search_results)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.connect((sys.argv[1], 55555))
+    except:
+        print "Cannot connect to %s" % sys.argv[1]
+
+    while cont != False:
+        command = raw_input(recv_data(sock)).upper()
+        send_data(sock, command)
+        if command not in command_list:
+            print recv_data(sock)
+            print command_list
+
+        elif command == "DRIVESEARCH":
+            file_name = raw_input(recv_data(sock))
+            send_data(sock, file_name)
+            print recv_data(sock)
 
         elif command == "DIRSEARCH":
-            send_data(usersock, "Filename: ")
-            search_results = search_directory(recv_data(usersock))
-            if search_results == -1:
-                send_data(usersock, "FILE NOT FOUND")
-            else:
-                send_data(usersock, search_results)
+            file_name = raw_input(recv_data(sock))
+            send_data(sock, file_name)
+            print recv_data(sock)
 
         elif command == "DOWNLOAD":
-            send_data(usersock, "Filename: ")
-            send_file_contents(recv_data(usersock), usersock, userinfo)
+            file_name = raw_input(recv_data(sock))
+            send_data(sock, file_name)
+            receive_file_contents(raw_input("Local Filename: "), sock)
 
         elif command == "UPLOAD":
-            send_data(usersock, "Filename: ")
-            receive_file_contents(recv_data(usersock), usersock)
+            file_name = raw_input(recv_data(sock))
+            new_file_name = raw_input("File to create: ")
+            send_data(sock, new_file_name)
+            send_file_contents(file_name, sock)
 
         elif command == "CLOSE":
-            continue_bool = False
+            cont = False
 
-        else:
-            send_data(usersock, "INVALID COMMAND")
-    return
-
-
-def main():
-    while True:
-        server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_sock.bind(('', 55555))
-        server_sock.listen(8)
-        usersock, userinfo = server_sock.accept()
-
-        conn_thread = threading.Thread(None, handle_connection, None, (usersock, userinfo))
-        conn_thread.start()
-
-    return
+    sock.close()
 
 
 main()
